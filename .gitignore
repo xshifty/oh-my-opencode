@@ -1,0 +1,31 @@
+# Byte-compiled, optimized, and compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Python stubs
+*.pyi
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+build/
+dist/
+
+# NumPy coverage cache
+.nox/
+.coverage
+.coverage.*
+
+# Pyre type checker
+.pyre_inf
+
+# pytest cache
+.pytest_cache/
+
+# mypy cache
+.mypy_cache/
+
+# pandas cache
+.pandas

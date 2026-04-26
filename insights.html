@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenCode Session Insights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --green: #166534;
+  --green-light: #dcfce7;
+  --red: #991b1b;
+  --red-light: #fee2e2;
+  --blue: #1e40af;
+  --blue-light: #dbeafe;
+  --amber: #92400e;
+  --amber-light: #fef3c7;
+  --border: #e2e8f0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+nav a {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+nav a:hover { background: var(--bg); color: var(--text); }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; }
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.card h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.card h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text-secondary); }
+
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--card); border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.stat-value { font-size: 28px; font-weight: 700; color: var(--blue); }
+.stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.narrative-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.narrative-card { border-radius: 10px; padding: 16px; }
+.narrative-card.working { background: var(--green-light); border-left: 4px solid var(--green); }
+.narrative-card.hindering { background: var(--red-light); border-left: 4px solid var(--red); }
+.narrative-card.quick { background: var(--amber-light); border-left: 4px solid var(--amber); }
+.narrative-card.horizon { background: var(--blue-light); border-left: 4px solid var(--blue); }
+
+.narrative-card h3 { margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+.working h3 { color: var(--green); }
+.hindering h3 { color: var(--red); }
+.quick h3 { color: var(--amber); }
+.horizon h3 { color: var(--blue); }
+
+.narrative-card ul { list-style: none; padding: 0; }
+.narrative-card li { font-size: 14px; margin-bottom: 6px; padding-left: 16px; position: relative; }
+.narrative-card li::before { content: "•"; position: absolute; left: 0; font-weight: bold; }
+
+.bar-chart { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.bar-row { display: flex; align-items: center; gap: 12px; }
+.bar-label { min-width: 90px; font-size: 13px; color: var(--text-secondary); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 24px; background: #f1f5f9; border-radius: 4px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 12px; color: white; font-weight: 500; min-width: fit-content; transition: width 0.6s ease; }
+.bar-fill.green { background: var(--green); }
+.bar-fill.blue { background: var(--blue); }
+.bar-fill.amber { background: var(--amber); }
+.bar-fill.red { background: var(--red); }
+.bar-value { font-size: 12px; color: var(--text-secondary); min-width: 50px; text-align: right; }
+
+.project-area { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.project-area:last-child { border-bottom: none; }
+.project-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.project-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge.exploration { background: var(--blue-light); color: var(--blue); }
+.badge.implementation { background: var(--green-light); color: var(--green); }
+.badge.scripting { background: var(--amber-light); color: var(--amber); }
+
+.metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+.metric-row:last-child { border-bottom: none; }
+.metric-label { color: var(--text-secondary); }
+.metric-value { font-weight: 600; }
+
+.prompt-sample { background: #f8fafc; border-left: 3px solid var(--blue); padding: 12px 16px; margin: 8px 0; border-radius: 0 8px 8px 0; font-size: 13px; color: var(--text-secondary); font-style: italic; }
+
+.copy-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 12px 0; position: relative; }
+.copy-box pre { white-space: pre-wrap; font-size: 13px; line-height: 1.6; font-family: 'SF Mono', 'Fira Code', monospace; }
+.copy-btn { position: absolute; top: 8px; right: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text-secondary); }
+.copy-btn:hover { background: var(--bg); }
+
+.friction-item { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.friction-item:last-child { border-bottom: none; }
+.friction-problem { font-size: 14px; font-weight: 500; color: var(--red); margin-bottom: 8px; }
+.friction-data { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.friction-rec { font-size: 13px; color: var(--green); background: var(--green-light); padding: 8px 12px; border-radius: 6px; }
+
+.feature-item { padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+.feature-item:last-child { border-bottom: none; }
+.feature-name { font-weight: 600; font-size: 14px; color: var(--blue); margin-bottom: 4px; }
+.feature-desc { font-size: 13px; color: var(--text-secondary); }
+
+.fun-fact { text-align: center; padding: 32px; background: linear-gradient(135deg, #dbeafe, #dcfce7); border-radius: 12px; margin-top: 24px; }
+.fun-fact p { font-size: 16px; color: var(--text); font-weight: 500; }
+
+@media (max-width: 640px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .narrative-grid { grid-template-columns: 1fr; }
+  nav { padding: 8px 12px; }
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <a href="#overview">Overview</a>
+  <a href="#at-glance">At a Glance</a>
+  <a href="#projects">Projects</a>
+  <a href="#tools">Tools</a>
+  <a href="#response-time">Response Time</a>
+  <a href="#multi-agent">Multi-Agent</a>
+  <a href="#time-of-day">Time of Day</a>
+  <a href="#prompts">Prompts</a>
+  <a href="#wins">Wins</a>
+  <a href="#friction">Friction</a>
+  <a href="#agents-md">AGENTS.md</a>
+  <a href="#features">Features</a>
+  <a href="#horizon">Horizon</a>
+</nav>
+
+<div class="container">
+
+<!-- HEADER -->
+<div id="overview" class="card">
+  <h1>OpenCode Session Insights</h1>
+  <p class="subtitle">Analysis of 211 sessions from March 20 – April 26, 2026 (36 days)</p>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-value">211</div><div class="stat-label">Sessions</div></div>
+    <div class="stat-card"><div class="stat-value">8,793</div><div class="stat-label">Messages</div></div>
+    <div class="stat-card"><div class="stat-value">36</div><div class="stat-label">Days Span</div></div>
+    <div class="stat-card"><div class="stat-value">244</div><div class="stat-label">Messages/Day</div></div>
+    <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Projects</div></div>
+  </div>
+</div>
+
+<!-- AT A GLANCE -->
+<div id="at-glance" class="card">
+  <h2>At a Glance</h2>
+  <div class="narrative-grid">
+    <div class="narrative-card working">
+      <h3>What's Working</h3>
+      <ul>
+        <li>You excel at systematic exploration with 2,775+ read operations across 12 project directories</li>
+        <li>Strong bash scripting habits (2,965 calls) for automation and validation</li>
+        <li>Consistent use of todo tracking (294 tasks) showing organized workflow management</li>
+      </ul>
+    </div>
+    <div class="narrative-card hindering">
+      <h3>What's Hindering</h3>
+      <ul>
+        <li>Webfetch has a 42.9% error rate — consider validating URLs before fetching</li>
+        <li>Write tool errors at 8.3% suggest file permission or path issues to investigate</li>
+        <li>High Read vs Write ratio in microharness (1,969 reads vs 284 writes) indicates exploration without implementation</li>
+      </ul>
+    </div>
+    <div class="narrative-card quick">
+      <h3>Quick Wins</h3>
+      <ul>
+        <li>Replace sequential file scanning with parallel Task agents for faster exploration</li>
+        <li>Add pre-commit validation to reduce bash errors (currently 105 failures)</li>
+        <li>Commit after logical steps instead of waiting for milestones</li>
+      </ul>
+    </div>
+    <div class="narrative-card horizon">
+      <h3>On the Horizon</h3>
+      <ul>
+        <li>Autonomous pipelines using your existing multi-agent setup (28 parent sessions already doing this)</li>
+        <li>Self-correcting test-driven loops with your strong bash + edit workflow</li>
+        <li>Auto-syncing documentation with code changes via your read-heavy pattern</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT AREAS -->
+<div id="projects" class="card">
+  <h2>What You Work On</h2>
+  <div class="project-area">
+    <div class="project-name">microharness (~111 sessions)</div>
+    <div class="project-meta"><span class="badge exploration">Exploration</span></div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">Centered on understanding and analyzing the microharness codebase. Heavy Read/Grep/Glob usage for systematic navigation, Edit/Bash for incremental improvements.</p>
+  </div>
+  <div class="project-area">
+    <div class="project-name">learn-harness-engineering (~35 sessions)</div>
+    <div class="project-meta"><span class="badge implementation">Implementation</span></div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">Focused on learning and implementing harness engineering concepts. Edit-heavy workflow with task delegation for structured exploration.</p>
+  </div>
+  <div class="project-area">
+    <div class="project-name">ai-server (~19 sessions)</div>
+    <div class="project-meta"><span class="badge scripting">Scripting</span></div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">Server-side AI development with heavy Bash automation. Webfetch used for API research and documentation gathering.</p>
+  </div>
+  <div class="project-area">
+    <div class="project-name">liveling (~12 sessions)</div>
+    <div class="project-meta"><span class="badge exploration">Exploration</span></div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">Personal finance system analysis. Read-heavy pattern for understanding Go codebase structure, Edit/Bash for incremental improvements.</p>
+  </div>
+  <div class="project-area">
+    <div class="project-name">opencode-workspace (~12 sessions)</div>
+    <div class="project-meta"><span class="badge scripting">Scripting</span></div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">OpenCode tool development and workspace management. Bash-heavy for automation scripts, Glob/Read for codebase exploration.</p>
+  </div>
+</div>
+
+<!-- TOOL USAGE -->
+<div id="tools" class="card">
+  <h2>Tool Usage Breakdown</h2>
+  
+  <h3>Top Tools by Count (9,138 total calls)</h3>
+  <div class="bar-chart" id="tool-bars"></div>
+  
+  <h3 style="margin-top:24px;">Error Rates by Tool</h3>
+  <div class="bar-chart" id="error-bars"></div>
+</div>
+
+<!-- RESPONSE TIMES -->
+<div id="response-time" class="card">
+  <h2>Response Time Distribution</h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Time between user messages across all sessions. Median: <strong>10s</strong> · Average: <strong>24.8s</strong> · P90: <strong>45s</strong> · P95: <strong>120s</strong></p>
+  <div class="bar-chart" id="response-bars"></div>
+</div>
+
+<!-- MULTI-AGENT -->
+<div id="multi-agent" class="card">
+  <h2>Multi-Agent (Parallel Subagent) Activity</h2>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
+    <div class="stat-card"><div class="stat-value">88</div><div class="stat-label">Parallel Events</div></div>
+    <div class="stat-card"><div class="stat-value">28</div><div class="stat-label">Parent Sessions</div></div>
+    <div class="stat-card"><div class="stat-value">13.3%</div><div class="stat-label">Of All Sessions</div></div>
+  </div>
+  <p style="font-size:14px;color:var(--text-secondary);">You've effectively used subagent delegation in over 13% of your sessions, spawning parallel agents for concurrent exploration. This shows mature multi-agent workflow patterns.</p>
+</div>
+
+<!-- TIME OF DAY -->
+<div id="time-of-day" class="card">
+  <h2>Activity by Time of Day</h2>
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Based on message timestamps across all sessions. Peak activity in the evening.</p>
+  <div class="bar-chart" id="time-bars"></div>
+</div>
+
+<!-- PROMPT ANALYSIS -->
+<div id="prompts" class="card">
+  <h2>Prompt Analysis (Last 10 Sessions)</h2>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:16px;">
+    <div class="stat-card"><div class="stat-value">~719</div><div class="stat-label">Avg Prompt Length (chars)</div></div>
+    <div class="stat-card"><div class="stat-value">~11,119</div><div class="stat-label">Max Prompt Length (chars)</div></div>
+  </div>
+  
+  <h3>Sample Prompts from Recent Sessions</h3>
+  <div class="prompt-sample">"Thoroughly explore the codebase at /Users/xshifty/dev/ai/oh-my-opencode to understand: 1. Directory structure..."</div>
+  <div class="prompt-sample">"based on current codebase (a collection of opencode skills, commands, etc.), generate a README.md file."</div>
+  <div class="prompt-sample">"update insights command to always send to the user a link to final report file that can be opened in the browser"</div>
+  
+  <p style="font-size:13px;color:var(--text-secondary);margin-top:12px;">Your prompts range from concise iterative requests (~60-200 chars) to comprehensive analysis directives (~7,000+ chars). The mix shows both quick task delegation and deep exploration patterns.</p>
+</div>
+
+<!-- BIG WINS -->
+<div id="wins" class="card">
+  <h2>Impressive Things You Did</h2>
+  
+  <div class="feature-item">
+    <div class="feature-name">🔍 Heavy Exploration Phase</div>
+    <div class="feature-desc">You performed 2,775 reads + 575 greps + 520 globs across sessions — demonstrating systematic codebase understanding through methodical navigation.</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">✏️ Iterative Implementation</div>
+    <div class="feature-desc">1,315 edits + 398 writes show persistent refinement and incremental improvement across multiple projects.</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">📚 Documentation Focus</div>
+    <div class="feature-desc">Strong Markdown creation alongside code development, including AGENTS.md files that guide future agent behavior.</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">⚡ Parallel Workflows</div>
+    <div class="feature-desc">28 parent sessions spawning subagents for concurrent exploration — showing advanced multi-agent orchestration skills.</div>
+  </div>
+</div>
+
+<!-- FRICTION POINTS -->
+<div id="friction" class="card">
+  <h2>Where Things Go Wrong</h2>
+  
+  <div class="friction-item">
+    <div class="friction-problem">Exploration Without Implementation</div>
+    <div class="friction-data">In microharness: 1,969 reads vs only 284 writes. You spend ~7x more time reading than writing.</div>
+    <div class="friction-rec">💡 Set a "read budget" of 50 reads per session before switching to implementation mode.</div>
+  </div>
+  
+  <div class="friction-item">
+    <div class="friction-problem">Webfetch Errors</div>
+    <div class="friction-data">30 errors out of 70 calls (42.9% error rate) — likely from invalid or unreachable URLs.</div>
+    <div class="friction-rec">💡 Validate URLs with glob/read first before fetching. Check if the URL exists in your project structure.</div>
+  </div>
+  
+  <div class="friction-item">
+    <div class="friction-problem">Bash Error Rate</div>
+    <div class="friction-data">105 errors across 2,965 calls (3.5% error rate) — commands failing due to missing dependencies or incorrect paths.</div>
+    <div class="friction-rec">💡 Test bash commands in isolation before embedding them in scripts. Use --dry-run flags where available.</div>
+  </div>
+  
+  <div class="friction-item">
+    <div class="friction-problem">Write Tool Failures</div>
+    <div class="friction-data">33 errors out of 398 calls (8.3%) — often from file permission issues or attempting to write to non-existent directories.</div>
+    <div class="friction-rec">💡 Ensure parent directories exist before writing files. Check directory permissions first.</div>
+  </div>
+</div>
+
+<!-- AGENTS.md SUGGESTIONS -->
+<div id="agents-md" class="card">
+  <h2>Suggested AGENTS.md Additions</h2>
+  
+  <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Copy these suggestions into your project's AGENTS.md or .agents.md files to improve workflow rules.</p>
+  
+  <div class="copy-box">
+    <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
+    <pre>## Workflow Rules
+
+Always validate URLs with glob/read before webfetch calls. Your data shows 42.9% error rate on webfetch, many from invalid URLs.
+
+Limit exploration to 50 reads per session before switching to implementation mode. Your microharness sessions show 1,969 reads vs only 284 writes.
+
+Test bash commands in isolation before embedding them in scripts. You've had 105 bash errors across 2,965 calls (3.5% error rate).
+
+Ensure parent directories exist before write operations. Check directory permissions first to avoid file not found errors.</pre>
+  </div>
+  
+  <div class="copy-box">
+    <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
+    <pre>## Tool Usage Guidelines
+
+- Use parallel Task agents for sequential file scanning (saves time on large codebases)
+- Commit after logical steps instead of waiting for milestones
+- Run linting before committing changes to catch errors early
+- Use context7_resolve-library-id before context7_query-docs for API references</pre>
+  </div>
+</div>
+
+<!-- FEATURES TO TRY -->
+<div id="features" class="card">
+  <h2>New Ways to Use OpenCode</h2>
+  
+  <div class="feature-item">
+    <div class="feature-name">🔍 "Heavy Exploration Phase"</div>
+    <div class="feature-desc">Use parallel Task agents to explore multiple directories simultaneously instead of sequential read/grep cycles. Paste this prompt: "Spawn 3 parallel task agents — one for each subdirectory in /src — to map the codebase structure concurrently."</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">🔄 "Iterative Refinement Loop"</div>
+    <div class="feature-desc">Create a structured Read → Edit → Test cycle for incremental improvements. Paste: "Read the file, make one focused edit, run the test suite, then iterate on any failures."</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">📝 "Documentation-First Development"</div>
+    <div class="feature-desc">Create AGENTS.md and README files before starting coding sessions. Paste: "Before implementing any feature, first create or update the project's documentation to define success criteria."</div>
+  </div>
+</div>
+
+<!-- ON THE HORIZON -->
+<div id="horizon" class="card">
+  <h2>On the Horizon</h2>
+  
+  <div class="feature-item">
+    <div class="feature-name">🤖 Autonomous Test-Driven Development</div>
+    <div class="feature-desc">Leverage your existing multi-agent setup to create fully autonomous TDD loops where subagents handle test creation, implementation, and validation independently.</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">🔄 Self-Correcting CI/CD Pipelines</div>
+    <div class="feature-desc">Use your strong bash + edit patterns to build pipelines that automatically detect failures and implement fixes without human intervention.</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">📊 Multi-Agent Code Review</div>
+    <div class="feature-desc">Deploy multiple subagents in parallel for code review — one analyzing architecture, another checking style, a third verifying security patterns.</div>
+  </div>
+  
+  <div class="feature-item">
+    <div class="feature-name">🔗 Auto-Syncing Documentation</div>
+    <div class="feature-desc">Set up automated documentation updates that trigger when code changes are detected, keeping AGENTS.md and README files in sync with your evolving codebase.</div>
+  </div>
+</div>
+
+<!-- FUN ENDING -->
+<div class="fun-fact">
+  <p>🎯 Fun Fact: You've made <strong>9,138 tool calls</strong> across <strong>211 sessions</strong>. If each call took just 5 seconds, that's over <strong>1 hour of pure agent time</strong> invested in your projects! Your most productive session had 25 prompts — proof that persistence pays off.</p>
+</div>
+
+</div>
+
+<script>
+const DATA = {
+  "tools": [
+    {"name":"bash","count":2965,"errors":105,"error_rate":3.5},
+    {"name":"read","count":2775,"errors":33,"error_rate":1.2},
+    {"name":"edit","count":1315,"errors":71,"error_rate":5.4},
+    {"name":"grep","count":575,"errors":1,"error_rate":0.2},
+    {"name":"glob","count":520,"errors":14,"error_rate":2.7},
+    {"name":"write","count":398,"errors":33,"error_rate":8.3},
+    {"name":"todowrite","count":294,"errors":5,"error_rate":1.7},
+    {"name":"task","count":96,"errors":13,"error_rate":13.5},
+    {"name":"webfetch","count":70,"errors":30,"error_rate":42.9},
+    {"name":"question","count":43,"errors":3,"error_rate":7.0}
+  ],
+  "response_times": {
+    "buckets":{"0-5s":3996,"5-15s":2928,"15-30s":770,"30-60s":423,"1-3m":302,"3-10m":120,"10m+":52}
+  },
+  "time_of_day":{"Morning (6-12)":1355,"Afternoon (12-18)":10964,"Evening (18-24)":15985,"Night (0-6)":8744}
+};
+
+function renderBarChart(containerId, items, maxVal) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  items.forEach(item => {
+    const pct = (item.count / maxVal * 100).toFixed(1);
+    const colorClass = item.error_rate > 10 ? 'red' : item.error_rate > 5 ? 'amber' : 'blue';
+    container.innerHTML += `
+      <div class="bar-row">
+        <span class="bar-label">${item.name}</span>
+        <div class="bar-track">
+          <div class="bar-fill ${colorClass}" style="width:${pct}%">${item.count}</div>
+        </div>
+        <span class="bar-value">${item.error_rate}%</span>
+      </div>`;
+  });
+}
+
+function renderResponseBars() {
+  const container = document.getElementById('response-bars');
+  if (!container) return;
+  const total = Object.values(DATA.response_times.buckets).reduce((a,b)=>a+b,0);
+  Object.entries(DATA.response_times.buckets).forEach(([label,count]) => {
+    const pct = (count/total*100).toFixed(1);
+    container.innerHTML += `
+      <div class="bar-row">
+        <span class="bar-label">${label}</span>
+        <div class="bar-track">
+          <div class="bar-fill green" style="width:${pct}%">${count}</div>
+        </div>
+        <span class="bar-value">${pct}%</span>
+      </div>`;
+  });
+}
+
+function renderTimeBars() {
+  const container = document.getElementById('time-bars');
+  if (!container) return;
+  const total = Object.values(DATA.time_of_day).reduce((a,b)=>a+b,0);
+  const colors = {'Morning (6-12)': 'blue', 'Afternoon (12-18)': 'amber', 'Evening (18-24)': 'green', 'Night (0-6)': 'red'};
+  Object.entries(DATA.time_of_day).forEach(([label,count]) => {
+    const pct = (count/total*100).toFixed(1);
+    container.innerHTML += `
+      <div class="bar-row">
+        <span class="bar-label">${label}</span>
+        <div class="bar-track">
+          <div class="bar-fill ${colors[label] || 'blue'}" style="width:${pct}%">${count.toLocaleString()}</div>
+        </div>
+        <span class="bar-value">${pct}%</span>
+      </div>`;
+  });
+}
+
+function copyToClipboard(btn) {
+  const pre = btn.parentElement.querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+renderBarChart('tool-bars', DATA.tools, 3000);
+renderBarChart('error-bars', DATA.tools.filter(t=>t.errors>0), 105);
+renderResponseBars();
+renderTimeBars();
+</script>
+
+</body>
+</html>
